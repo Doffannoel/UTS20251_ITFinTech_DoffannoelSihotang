@@ -1,0 +1,3 @@
+- [ ] Import formatIDR in CartSideBar.tsx
+- [ ] Replace "Rp {item.price}" with {formatIDR(item.price)}
+- [ ] Replace "Rp {total}" with {formatIDR(total)}
