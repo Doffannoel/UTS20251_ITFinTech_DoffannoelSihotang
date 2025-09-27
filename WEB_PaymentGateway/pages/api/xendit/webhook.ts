@@ -5,10 +5,8 @@ import Order from "@/models/Order";
 
 function isAuthorized(req: NextApiRequest) {
   const expected = process.env.XENDIT_CALLBACK_TOKEN;
-  if (!expected) return true;
-  const got =
-    (req.headers["x-callback-token"] as string) ||
-    (req.headers["X-Callback-Token"] as any);
+  if (!expected) return false; // lebih aman
+  const got = req.headers["x-callback-token"] as string;
   return got === expected;
 }
 
@@ -16,27 +14,33 @@ export default async function handler(
   req: NextApiRequest,
   res: NextApiResponse
 ) {
-  if (req.method !== "POST")
+  if (req.method !== "POST") {
     return res.status(405).json({ message: "Method not allowed" });
-  if (!isAuthorized(req))
+  }
+  if (!isAuthorized(req)) {
     return res.status(401).json({ message: "Invalid callback token" });
+  }
 
   await connectDB();
   const body = req.body || {};
+
   const invoiceId: string | undefined = body.id || body.invoice_id;
   const externalId: string | undefined = body.external_id;
   const statusRaw: string = String(body.status || "").toUpperCase();
-  if (!invoiceId && !externalId)
+
+  if (!invoiceId && !externalId) {
     return res
       .status(400)
       .json({ message: "Missing invoice id / external id" });
+  }
 
   const payment =
     (invoiceId && (await Payment.findOne({ invoiceId }))) ||
     (externalId && (await Payment.findOne({ externalId })));
 
-  if (!payment)
+  if (!payment) {
     return res.status(200).json({ message: "No payment doc matched, ignored" });
+  }
 
   let orderStatus: "PENDING" | "PAID" | "FAILED" | "EXPIRED" = "PENDING";
   if (statusRaw === "PAID" || statusRaw === "SETTLED") orderStatus = "PAID";
