@@ -21,6 +21,8 @@ export interface IOrder {
   externalId: string;
   invoiceId?: string;
   invoiceUrl?: string;
+  userId?: mongoose.Types.ObjectId;
+  phone?: string;
 }
 
 const OrderItemSchema = new Schema<IOrderItem>(
@@ -49,6 +51,8 @@ const OrderSchema = new Schema<IOrder>(
     externalId: { type: String, required: true, unique: true, index: true },
     invoiceId: String,
     invoiceUrl: String,
+    userId: { type: Schema.Types.ObjectId, ref: "User" }, // NEW
+    phone: String, // NEW - untuk notifikasi WA
   },
   { timestamps: true }
 );

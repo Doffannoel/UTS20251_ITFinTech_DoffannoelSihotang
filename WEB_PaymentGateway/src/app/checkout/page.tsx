@@ -1,12 +1,14 @@
 "use client";
 
 import Image from "next/image";
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { AiOutlineDelete } from "react-icons/ai";
 import { MdStar } from "react-icons/md";
+import Link from "next/link";
 
 import LikeButton from "@/components/LikeButton";
 import ButtonPrimary from "@/shared/Button/ButtonPrimary";
+import ButtonSecondary from "@/shared/Button/ButtonSecondary";
 import Input from "@/shared/Input/Input";
 
 import ContactInfo from "./ContactInfo";
@@ -22,11 +24,17 @@ const CheckoutPage = () => {
   >("ShippingAddress");
 
   const [email, setEmail] = useState("");
+  const [phone, setPhone] = useState("");
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [userData, setUserData] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+
   const [contactInfo, setContactInfo] = useState({
     name: "",
     phone: "",
     email: "",
   });
+
   const [shippingAddress, setShippingAddress] = useState({
     firstName: "",
     lastName: "",
@@ -38,7 +46,39 @@ const CheckoutPage = () => {
     postalCode: "",
     addressType: "home",
   });
+
   const { items, updateQty, remove, subtotal } = useCart();
+
+  useEffect(() => {
+    checkUserAuth();
+  }, []);
+
+  const checkUserAuth = async () => {
+    try {
+      const res = await fetch("/api/auth/check-user", {
+        credentials: "include",
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        if (data.user) {
+          setIsLoggedIn(true);
+          setUserData(data.user);
+          setEmail(data.user.email);
+          setPhone(data.user.whatsapp || data.user.phone || "");
+          setContactInfo({
+            name: data.user.name,
+            phone: data.user.phone,
+            email: data.user.email,
+          });
+        }
+      }
+    } catch (error) {
+      console.error("Auth check error:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleScrollToEl = (id: string) => {
     const element = document.getElementById(id);
@@ -53,7 +93,9 @@ const CheckoutPage = () => {
     setContactInfo(newContactInfo);
   };
 
-  const handleSaveShippingAddress = (newShippingAddress: typeof shippingAddress) => {
+  const handleSaveShippingAddress = (
+    newShippingAddress: typeof shippingAddress
+  ) => {
     setShippingAddress(newShippingAddress);
   };
 
@@ -67,28 +109,39 @@ const CheckoutPage = () => {
       return;
     }
 
-    const res = await fetch("/api/xendit/invoice", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        email,
-        items: items.map((i) => ({
-          slug: i.slug,
-          name: i.name,
-          price: i.price,
-          qty: i.qty,
-          image: i.image,
-        })),
-      }),
-    });
+    setLoading(true);
 
-    const data = await res.json();
-    if (!res.ok) {
-      alert(data?.message || "Gagal membuat invoice");
-      return;
+    try {
+      const res = await fetch("/api/xendit/invoice", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({
+          email,
+          phone, // Include phone for WhatsApp notifications
+          items: items.map((i) => ({
+            slug: i.slug,
+            name: i.name,
+            price: i.price,
+            qty: i.qty,
+            image: i.image,
+          })),
+        }),
+      });
+
+      const data = await res.json();
+      if (!res.ok) {
+        alert(data?.message || "Gagal membuat invoice");
+        return;
+      }
+
+      // Redirect to Xendit payment page
+      window.location.href = data.invoiceUrl;
+    } catch (error) {
+      alert("Terjadi kesalahan saat membuat invoice");
+    } finally {
+      setLoading(false);
     }
-
-    window.location.href = data.invoiceUrl;
   };
 
   const renderProduct = (i: (typeof items)[number]) => {
@@ -157,8 +210,61 @@ const CheckoutPage = () => {
   };
 
   const renderLeft = () => {
+    // If user is not logged in, show login prompt
+    if (!isLoggedIn && !loading) {
+      return (
+        <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-6 mb-6">
+          <h3 className="text-lg font-semibold text-gray-900 mb-2">
+            Login for Better Experience
+          </h3>
+          <p className="text-gray-600 mb-4">
+            Login untuk mendapatkan notifikasi WhatsApp dan tracking order yang
+            lebih mudah!
+          </p>
+          <div className="flex gap-3">
+            <ButtonPrimary href="/login?from=/checkout">Login</ButtonPrimary>
+            <ButtonSecondary
+              href="/register?from=/checkout"
+              className="border-2 border-primary text-primary"
+            >
+              Register
+            </ButtonSecondary>
+          </div>
+          <p className="text-sm text-gray-500 mt-4">
+            Atau lanjutkan sebagai guest checkout di bawah ini
+          </p>
+        </div>
+      );
+    }
+
     return (
       <div className="space-y-8">
+        {/* User Info if logged in */}
+        {isLoggedIn && userData && (
+          <div className="bg-green-50 border border-green-200 rounded-lg p-4 mb-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-green-800">Logged in as:</p>
+                <p className="font-semibold text-gray-900">{userData.name}</p>
+                <p className="text-sm text-gray-600">{userData.email}</p>
+              </div>
+              <div className="text-green-600">
+                <svg
+                  className="w-8 h-8"
+                  fill="currentColor"
+                  viewBox="0 0 20 20"
+                >
+                  <path
+                    fillRule="evenodd"
+                    d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
+                    clipRule="evenodd"
+                  />
+                </svg>
+              </div>
+            </div>
+          </div>
+        )}
+
         <div id="ContactInfo" className="scroll-mt-24">
           <ContactInfo
             isActive={tabActive === "ContactInfo"}
@@ -228,17 +334,49 @@ const CheckoutPage = () => {
               {items.map((i) => renderProduct(i))}
             </div>
 
-            <div className="mt-6">
-              <label className="block text-sm mb-1">Email untuk invoice</label>
-              <Input
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                rounded="rounded-lg"
-                sizeClass="h-12 px-4 py-3"
-                className="border-neutral-300 bg-transparent placeholder:text-neutral-500 focus:border-primary w-full"
-                placeholder="your@email.com"
-              />
+            {/* Email & Phone Input */}
+            <div className="mt-6 space-y-4">
+              <div>
+                <label className="block text-sm mb-1">
+                  Email untuk invoice
+                </label>
+                <Input
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  rounded="rounded-lg"
+                  sizeClass="h-12 px-4 py-3"
+                  className="border-neutral-300 bg-transparent placeholder:text-neutral-500 focus:border-primary w-full"
+                  placeholder="your@email.com"
+                  disabled={isLoggedIn}
+                />
+              </div>
+
+              {!isLoggedIn && (
+                <div>
+                  <label className="block text-sm mb-1">
+                    WhatsApp Number (Optional)
+                    <span className="text-xs text-gray-500 ml-1">
+                      untuk notifikasi order
+                    </span>
+                  </label>
+                  <Input
+                    type="tel"
+                    value={phone}
+                    onChange={(e) => setPhone(e.target.value)}
+                    rounded="rounded-lg"
+                    sizeClass="h-12 px-4 py-3"
+                    className="border-neutral-300 bg-transparent placeholder:text-neutral-500 focus:border-primary w-full"
+                    placeholder="08123456789"
+                  />
+                </div>
+              )}
+
+              {isLoggedIn && phone && (
+                <div className="text-sm text-green-600 bg-green-50 p-3 rounded-lg">
+                  ✓ Notifikasi WhatsApp akan dikirim ke: {phone}
+                </div>
+              )}
             </div>
 
             <div className="mt-10 border-t border-neutral-300 pt-6 text-sm">
@@ -257,14 +395,29 @@ const CheckoutPage = () => {
                 <span suppressHydrationWarning>Rp {formatNumberID(total)}</span>
               </div>
             </div>
-            <ButtonPrimary className="mt-8 w-full" onClick={handleConfirm}>
-              Confirm order
+
+            <ButtonPrimary
+              className="mt-8 w-full"
+              onClick={handleConfirm}
+              disabled={loading}
+            >
+              {loading ? "Processing..." : "Confirm order"}
             </ButtonPrimary>
+
+            {!isLoggedIn && (
+              <p className="text-xs text-center text-gray-500 mt-3">
+                <Link
+                  href="/login?from=/checkout"
+                  className="text-primary hover:underline"
+                >
+                  Login
+                </Link>{" "}
+                untuk mendapatkan notifikasi WhatsApp
+              </p>
+            )}
           </div>
         </div>
       </main>
     </div>
   );
 };
-
-export default CheckoutPage;

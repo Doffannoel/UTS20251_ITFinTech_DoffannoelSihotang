@@ -3,36 +3,23 @@ import "@/styles/global.css";
 import type { Metadata } from "next";
 import React, { Suspense } from "react";
 import Providers from "@/components/Providers";
-import Header from "@/components/Header/Header";
-import Footer from "@/shared/Footer/Footer";
+import ConditionalLayout from "@/components/ConditionalLayout";
 
 import Loading from "./loading";
 
-// export const metadata: Metadata = {
-//   title: "Hotkicks Ecommerce Template",
-//   icons: [
-//     {
-//       rel: "apple-touch-icon",
-//       url: "/apple-touch-icon.png",
-//     },
-//     {
-//       rel: "icon",
-//       type: "image/png",
-//       sizes: "32x32",
-//       url: "/favicon.png",
-//     },
-//     {
-//       rel: "icon",
-//       type: "image/png",
-//       sizes: "16x16",
-//       url: "/favicon.png",
-//     },
-//     {
-//       rel: "icon",
-//       url: "/favicon.ico",
-//     },
-//   ],
-// };
+export const metadata: Metadata = {
+  title: "SihotangHotKicks",
+  icons: [
+    {
+      rel: "icon",
+      url: "/logo.svg",
+    },
+    {
+      rel: "apple-touch-icon",
+      url: "/logo.svg",
+    },
+  ],
+};
 
 export default function RootLayout({
   // Layouts must accept a children prop.
@@ -45,9 +32,9 @@ export default function RootLayout({
     <html lang="en">
       <body className="">
         <Providers>
-          <Header />
-          <Suspense fallback={<Loading />}>{children}</Suspense>
-          <Footer />
+          <ConditionalLayout>
+            <Suspense fallback={<Loading />}>{children}</Suspense>
+          </ConditionalLayout>
         </Providers>
       </body>
     </html>
