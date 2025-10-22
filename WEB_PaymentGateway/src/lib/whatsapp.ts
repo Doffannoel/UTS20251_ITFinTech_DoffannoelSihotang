@@ -155,3 +155,6 @@ export async function sendWelcomeMessage(phone: string, name: string) {
 
   return data;
 }
+
+export const sendOrderNotification = sendOrderCreated;
+export const sendPaymentSuccessNotification = sendPaymentPaid;
