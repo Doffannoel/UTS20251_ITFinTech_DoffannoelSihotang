@@ -1,10 +1,10 @@
-import React from 'react';
+import React from "react";
 
-import Filter from '@/components/Filter';
-import ProductCard from '@/components/ProductCard';
-import { productsSection, shoes } from '@/data/content';
-import ButtonPrimary from '@/shared/Button/ButtonPrimary';
-import Heading from '@/shared/Heading/Heading';
+import Filter from "@/components/Filter";
+import ProductCard from "@/components/ProductCard";
+import { productsSection, shoes } from "@/data/content";
+import ButtonPrimary from "@/shared/Button/ButtonPrimary";
+import Heading from "@/shared/Heading/Heading";
 
 const SectionProducts = () => {
   return (
@@ -25,7 +25,7 @@ const SectionProducts = () => {
       </div>
 
       <div className="mt-14 flex items-center justify-center">
-        <ButtonPrimary>View More</ButtonPrimary>
+        <ButtonPrimary href="/Homepage">View More</ButtonPrimary>
       </div>
     </div>
   );

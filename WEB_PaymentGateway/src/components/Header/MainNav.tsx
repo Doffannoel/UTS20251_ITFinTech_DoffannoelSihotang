@@ -1,18 +1,28 @@
-import Image from 'next/image';
-import Link from 'next/link';
-import React from 'react';
-import { FaRegBell } from 'react-icons/fa6';
-import { RiSearch2Line } from 'react-icons/ri';
+"use client";
 
-import avatar from '@/images/avatar.png';
-import ButtonCircle3 from '@/shared/Button/ButtonCircle3';
-import Input from '@/shared/Input/Input';
-import Logo from '@/shared/Logo/Logo';
+import Image from "next/image";
+import Link from "next/link";
+import React from "react";
+import { FaRegBell } from "react-icons/fa6";
+import { RiSearch2Line } from "react-icons/ri";
 
-import CartSideBar from '../CartSideBar';
-import MenuBar from './MenuBar';
+import avatar from "@/images/avatar.png";
+import ButtonCircle3 from "@/shared/Button/ButtonCircle3";
+import Input from "@/shared/Input/Input";
+import Logo from "@/shared/Logo/Logo";
+
+import CartSideBar from "../CartSideBar";
+import MenuBar from "./MenuBar";
+import { useAuth } from "@/hooks/useAuth";
+import { usePathname } from "next/navigation";
 
 const MainNav = () => {
+  const { user, admin, isLoading } = useAuth();
+  const pathname = usePathname();
+
+  const displayName = user?.name || admin?.name || "Guest";
+  const isLoggedIn = user || admin;
+
   return (
     <div className="container flex items-center justify-between py-4">
       <div className="flex-1 lg:hidden">
@@ -47,7 +57,7 @@ const MainNav = () => {
               />
             </ButtonCircle3>
             <Link href="/signup" className="hidden text-sm lg:block">
-              Doffannoel Sihotang
+              {isLoading ? "Loading..." : displayName}
             </Link>
           </div>
         </div>

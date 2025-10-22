@@ -9,11 +9,18 @@ interface ConditionalLayoutProps {
   children: React.ReactNode;
 }
 
-export default function ConditionalLayout({ children }: ConditionalLayoutProps) {
+export default function ConditionalLayout({
+  children,
+}: ConditionalLayoutProps) {
   const pathname = usePathname();
 
   // Don't show header on login, register, and admin pages
-  const showHeader = pathname && pathname !== "/" && pathname !== "/register" && pathname !== "/login" && !pathname.startsWith("/admin") && !pathname.startsWith("/login/admin");
+  const showHeader =
+    pathname &&
+    pathname !== "/register" &&
+    pathname !== "/login" &&
+    !pathname.startsWith("/admin") &&
+    !pathname.startsWith("/login/admin");
 
   // Always show footer
   const showFooter = true;

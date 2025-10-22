@@ -346,7 +346,7 @@ const CheckoutPage = () => {
                   onChange={(e) => setEmail(e.target.value)}
                   rounded="rounded-lg"
                   sizeClass="h-12 px-4 py-3"
-                  className="border-neutral-300 bg-transparent placeholder:text-neutral-500 focus:border-primary w-full"
+                  className="border-neutral-300 bg-white placeholder:text-neutral-500 focus:border-primary !disabled:bg-white w-full text-black"
                   placeholder="your@email.com"
                   disabled={isLoggedIn}
                 />
@@ -421,3 +421,5 @@ const CheckoutPage = () => {
     </div>
   );
 };
+
+export default CheckoutPage;
