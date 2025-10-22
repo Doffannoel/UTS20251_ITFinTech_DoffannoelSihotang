@@ -1,0 +1,17 @@
+{
+  "dependencies": {
+    "@hookform/resolvers": "^5.2.2",
+    "date-fns": "^4.1.0",
+    "iron-session": "^8.0.4",
+    "multer": "^2.0.2",
+    "react-spinners": "^0.17.0",
+    "recharts": "^3.3.0",
+    "sharp": "^0.34.4",
+    "yup": "^1.7.1"
+  },
+  "devDependencies": {
+    "@types/bcryptjs": "^2.4.6",
+    "@types/jsonwebtoken": "^9.0.10",
+    "@types/multer": "^2.0.0"
+  }
+}

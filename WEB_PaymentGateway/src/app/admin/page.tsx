@@ -110,25 +110,22 @@ export default function AdminDashboard() {
 
   if (loading) {
     return (
-      <AdminLayout>
-        <div className="flex items-center justify-center h-64">
-          <div className="text-center">
-            <div className="loader mx-auto">
-              <div className="circle" />
-              <div className="circle" />
-              <div className="circle" />
-              <div className="circle" />
-            </div>
-            <p className="mt-4 text-gray-600">Loading dashboard...</p>
+      <div className="flex items-center justify-center h-64">
+        <div className="text-center">
+          <div className="loader mx-auto">
+            <div className="circle" />
+            <div className="circle" />
+            <div className="circle" />
+            <div className="circle" />
           </div>
+          <p className="mt-4 text-gray-600">Loading dashboard...</p>
         </div>
-      </AdminLayout>
+      </div>
     );
   }
 
   return (
-    <AdminLayout>
-      <div className="space-y-6">
+    <div className="space-y-6">
         {/* Welcome Message */}
         <div className="bg-gradient-to-r from-blue-600 to-blue-800 rounded-lg p-6 text-white">
           <h1 className="text-2xl font-bold">Welcome Back to Dashboard! 👋</h1>
@@ -324,6 +321,5 @@ export default function AdminDashboard() {
           </div>
         </div>
       </div>
-    </AdminLayout>
   );
 }

@@ -73,12 +73,6 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
       color: "text-blue-500",
     },
     {
-      label: "Orders",
-      href: "/admin/orders",
-      icon: <FaShoppingCart className="text-xl" />,
-      color: "text-green-500",
-    },
-    {
       label: "Products",
       href: "/admin/products",
       icon: <FaBox className="text-xl" />,
@@ -97,23 +91,29 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
       ],
     },
     {
-      label: "Customers",
-      href: "/admin/customers",
-      icon: <FaUsers className="text-xl" />,
-      color: "text-yellow-500",
-    },
-    {
       label: "Analytics",
       href: "/admin/analytics",
       icon: <FaChartBar className="text-xl" />,
       color: "text-red-500",
     },
-    {
-      label: "Settings",
-      href: "/admin/settings",
-      icon: <FaCog className="text-xl" />,
-      color: "text-gray-500",
-    },
+    // {
+    //   label: "Orders",
+    //   href: "/admin/orders",
+    //   icon: <FaShoppingCart className="text-xl" />,
+    //   color: "text-green-500",
+    // },
+    // {
+    //   label: "Customers",
+    //   href: "/admin/customers",
+    //   icon: <FaUsers className="text-xl" />,
+    //   color: "text-yellow-500",
+    // },
+    // {
+    //   label: "Settings",
+    //   href: "/admin/settings",
+    //   icon: <FaCog className="text-xl" />,
+    //   color: "text-gray-500",
+    // },
   ];
 
   if (loading) {
@@ -146,8 +146,8 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
 
       {/* Sidebar */}
       <div
-        className={`fixed inset-y-0 left-0 z-40 w-64 bg-gray-900 transform transition-transform duration-300 ease-in-out ${
-          sidebarOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
+        className={`fixed top-0 left-0 h-screen z-40 w-64 bg-gray-900 transform transition-transform duration-300 ease-in-out lg:translate-x-0 ${
+          sidebarOpen ? "translate-x-0" : "-translate-x-full"
         }`}
       >
         <div className="flex flex-col h-full">
@@ -186,7 +186,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
                   onClick={() => setSidebarOpen(false)}
                   className={`group flex items-center px-2 py-2 text-sm font-medium rounded-md transition-colors ${
                     pathname === item.href
-                      ? "bg-gray-800 text-white"
+                      ? "bg-white text-gray-900 font-semibold shadow"
                       : "text-gray-300 hover:bg-gray-700 hover:text-white"
                   }`}
                 >
@@ -239,12 +239,9 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
             <div className="flex items-center justify-between h-16">
               <h1 className="text-xl font-semibold text-gray-900">
                 {pathname === "/admin" && "Dashboard Overview"}
-                {pathname === "/admin/orders" && "Order Management"}
                 {pathname === "/admin/products" && "Product Management"}
                 {pathname === "/admin/products/add" && "Add New Product"}
-                {pathname === "/admin/customers" && "Customer Management"}
                 {pathname === "/admin/analytics" && "Analytics & Reports"}
-                {pathname === "/admin/settings" && "Settings"}
               </h1>
 
               <div className="flex items-center space-x-4">
@@ -264,6 +261,14 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
                     />
                   </svg>
                 </button>
+
+                <Link
+                  href="/"
+                  target="_blank"
+                  className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200"
+                >
+                  View Store
+                </Link>
               </div>
             </div>
           </div>

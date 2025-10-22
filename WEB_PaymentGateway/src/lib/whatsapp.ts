@@ -1,316 +1,157 @@
+// src/lib/whatsapp.ts
 import { formatIDR } from "./format";
 
-// Fonnte.com API Configuration
-const FONNTE_TOKEN = process.env.FONNTE_TOKEN || "";
 const FONNTE_URL = "https://api.fonnte.com/send";
 
-export interface WhatsAppResponse {
-  status: boolean;
-  message?: string;
-  error?: string;
+function ensureToken() {
+  const token = process.env.FONNTE_TOKEN;
+  if (!token)
+    throw new Error(
+      "FONNTE_TOKEN is missing. Set it in .env.local and restart the server."
+    );
+  return token;
 }
 
-/**
- * Generate a 6-digit OTP
- */
+// Normalisasi nomor ke 62xxxxxxxxxx (tanpa tanda +)
+export function formatPhoneNumber(phone: string): string {
+  let cleaned = (phone || "").replace(/\D/g, ""); // hapus non-digit
+  if (cleaned.startsWith("0")) cleaned = "62" + cleaned.slice(1);
+  if (!cleaned.startsWith("62")) cleaned = "62" + cleaned;
+  return cleaned;
+}
+
+// Util kirim ke Fonnte dengan logging error yang jelas
+async function postFonnte(target: string, message: string) {
+  const token = ensureToken();
+
+  const res = await fetch(FONNTE_URL, {
+    method: "POST",
+    headers: {
+      Authorization: token, // token langsung, bukan "Bearer ..."
+      "Content-Type": "application/json",
+      Accept: "application/json",
+    },
+    body: JSON.stringify({
+      target, // "62xxxxxxxxxx" atau "62xxx,62yyy"
+      message, // isi pesan
+      // TIDAK pakai countryCode karena target sudah 62xxxx
+      // delay: 2,                       // opsional
+    }),
+  });
+
+  const text = await res.text();
+  let data: any = {};
+  try {
+    data = JSON.parse(text);
+  } catch {}
+
+  if (!res.ok || data?.status === false) {
+    console.error("Fonnte send failed:", {
+      httpStatus: res.status,
+      data: text || data,
+    });
+    throw new Error(data?.message || `Fonnte HTTP ${res.status}`);
+  }
+  return data;
+}
+
+/** 6-digit OTP */
 export function generateOTP(): string {
   return Math.floor(100000 + Math.random() * 900000).toString();
 }
 
-/**
- * Format Indonesian phone number
- */
-export function formatPhoneNumber(phone: string): string {
-  // Remove all non-digits
-  let cleaned = phone.replace(/\D/g, "");
+/** Kirim OTP login via WhatsApp */
+export async function sendWhatsAppOTP(phone: string, otp: string) {
+  const formattedPhone = formatPhoneNumber(phone);
+  const message = `🔐 *HotKicks Verification*
 
-  // Convert 0 prefix to 62
-  if (cleaned.startsWith("0")) {
-    cleaned = "62" + cleaned.slice(1);
-  }
+Kode OTP kamu: *${otp}*
+Berlaku 5 menit. Jangan bagikan kode ini ke siapa pun.
 
-  // Add 62 if not present
-  if (!cleaned.startsWith("62")) {
-    cleaned = "62" + cleaned;
-  }
+Jika kamu tidak meminta OTP, abaikan pesan ini.`;
 
-  return cleaned;
+  await postFonnte(formattedPhone, message);
+  return { status: true, message: "OTP sent" };
 }
 
-/**
- * Send OTP via WhatsApp
- */
-export async function sendWhatsAppOTP(
-  phone: string,
-  otp: string
-): Promise<WhatsAppResponse> {
-  try {
-    const formattedPhone = formatPhoneNumber(phone);
-
-    const message = `🔐 *HotKicks Verification*
-
-Your OTP code is: *${otp}*
-
-This code will expire in 5 minutes.
-Do not share this code with anyone.
-
-If you didn't request this, please ignore this message.`;
-
-    const response = await fetch(FONNTE_URL, {
-      method: "POST",
-      headers: {
-        Authorization: FONNTE_TOKEN,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        target: formattedPhone,
-        message: message,
-        countryCode: "62",
-      }),
-    });
-
-    const data = await response.json();
-
-    if (response.ok && data.status) {
-      return { status: true, message: "OTP sent successfully" };
-    }
-
-    return {
-      status: false,
-      error: data.message || "Failed to send OTP",
-    };
-  } catch (error) {
-    console.error("WhatsApp OTP Error:", error);
-    return {
-      status: false,
-      error: "Failed to send WhatsApp message",
-    };
-  }
-}
-
-/**
- * Send order confirmation notification
- */
-export async function sendOrderNotification(
+/** Notif saat checkout berhasil dibuat */
+export async function sendOrderCreated(
   phone: string,
   orderData: {
     externalId: string;
     amount: number;
-    status: string;
-    invoiceUrl: string;
-    items?: Array<{ name: string; qty: number; price: number }>;
+    items?: { name: string; qty: number; price: number }[];
   }
-): Promise<WhatsAppResponse> {
-  try {
-    const formattedPhone = formatPhoneNumber(phone);
+) {
+  const formattedPhone = formatPhoneNumber(phone);
 
-    let itemsList = "";
-    if (orderData.items && orderData.items.length > 0) {
-      itemsList =
-        "\n*Items:*\n" +
-        orderData.items
-          .map(
-            (item) => `• ${item.name} (${item.qty}x) - ${formatIDR(item.price)}`
-          )
-          .join("\n");
-    }
-
-    const message = `🛒 *Order Confirmation - HotKicks*
-
-Thank you for your order!
-
-📋 *Order Details:*
-Order ID: ${orderData.externalId}
-Total: ${formatIDR(orderData.amount)}
-Status: ${orderData.status}${itemsList}
-
-💳 *Payment Link:*
-${orderData.invoiceUrl}
-
-Please complete payment within 24 hours.
-
-Thank you for shopping at HotKicks! 🙏
-
-Need help? Contact us:
-📱 WhatsApp: +62 812-3456-7890
-📧 Email: support@hotkicks.com`;
-
-    const response = await fetch(FONNTE_URL, {
-      method: "POST",
-      headers: {
-        Authorization: FONNTE_TOKEN,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        target: formattedPhone,
-        message: message,
-        countryCode: "62",
-      }),
-    });
-
-    const data = await response.json();
-
-    if (response.ok && data.status) {
-      return { status: true, message: "Notification sent successfully" };
-    }
-
-    return {
-      status: false,
-      error: data.message || "Failed to send notification",
-    };
-  } catch (error) {
-    console.error("WhatsApp Notification Error:", error);
-    return {
-      status: false,
-      error: "Failed to send WhatsApp notification",
-    };
+  let itemsList = "";
+  if (orderData.items?.length) {
+    itemsList =
+      "\n*Items:*\n" +
+      orderData.items
+        .map((it) => `• ${it.name} (${it.qty}x) - ${formatIDR(it.price)}`)
+        .join("\n");
   }
+
+  const message = `🛒 *Order Created - HotKicks*
+
+Order ID: *${orderData.externalId}*
+Total: *${formatIDR(orderData.amount)}*${itemsList}
+
+Silakan selesaikan pembayaran untuk memproses pesananmu.`;
+
+  await postFonnte(formattedPhone, message);
+  return { status: true, message: "Checkout notification sent" };
 }
 
-/**
- * Send payment success notification
- */
-export async function sendPaymentSuccessNotification(
+/** Notif saat pembayaran lunas */
+export async function sendPaymentPaid(
   phone: string,
   orderData: {
     externalId: string;
     amount: number;
-    paidAt?: Date;
-    items?: Array<{ name: string; qty: number }>;
   }
-): Promise<WhatsAppResponse> {
-  try {
-    const formattedPhone = formatPhoneNumber(phone);
-    const paymentDate = orderData.paidAt || new Date();
+) {
+  const formattedPhone = formatPhoneNumber(phone);
+  const message = `✅ *Payment Received - HotKicks*
 
-    let itemsList = "";
-    if (orderData.items && orderData.items.length > 0) {
-      itemsList =
-        "\n*Items Purchased:*\n" +
-        orderData.items
-          .map((item) => `• ${item.name} (${item.qty}x)`)
-          .join("\n");
-    }
+Order ID: *${orderData.externalId}*
+Total: *${formatIDR(orderData.amount)}*
 
-    const message = `✅ *Payment Successful! - HotKicks*
+Terima kasih! Pesananmu segera diproses.`;
 
-Your payment has been confirmed!
-
-📋 *Transaction Details:*
-Order ID: ${orderData.externalId}
-Amount Paid: ${formatIDR(orderData.amount)}
-Payment Date: ${paymentDate.toLocaleString("id-ID")}${itemsList}
-
-🚚 *Shipping Information:*
-Your order is being processed.
-Estimated delivery: 3-5 business days.
-
-You will receive tracking information once your order ships.
-
-Thank you for your purchase! 🎉
-
-*Track your order:*
-https://hotkicks.com/track/${orderData.externalId}
-
-Need help? Contact us:
-📱 WhatsApp: +62 812-3456-7890
-📧 Email: support@hotkicks.com`;
-
-    const response = await fetch(FONNTE_URL, {
-      method: "POST",
-      headers: {
-        Authorization: FONNTE_TOKEN,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        target: formattedPhone,
-        message: message,
-        countryCode: "62",
-      }),
-    });
-
-    const data = await response.json();
-
-    if (response.ok && data.status) {
-      return { status: true, message: "Payment notification sent" };
-    }
-
-    return {
-      status: false,
-      error: data.message || "Failed to send payment notification",
-    };
-  } catch (error) {
-    console.error("WhatsApp Payment Notification Error:", error);
-    return {
-      status: false,
-      error: "Failed to send payment notification",
-    };
-  }
+  await postFonnte(formattedPhone, message);
+  return { status: true, message: "Payment notification sent" };
 }
 
-/**
- * Send welcome message after registration
- */
-export async function sendWelcomeMessage(
-  phone: string,
-  name: string
-): Promise<WhatsAppResponse> {
-  try {
-    const formattedPhone = formatPhoneNumber(phone);
+// lib/whatsapp.ts
 
-    const message = `🎉 *Welcome to HotKicks, ${name}!*
+export async function sendWelcomeMessage(phone: string, name: string) {
+  const FONNTE_TOKEN = process.env.FONNTE_TOKEN;
+  const FONNTE_URL = "https://api.fonnte.com/send";
 
-Thank you for joining our sneaker community!
-
-✨ *Member Benefits:*
-• Exclusive early access to new releases
-• Special member-only discounts
-• Free shipping on orders over Rp 500.000
-• Birthday surprises
-
-🎁 *First Purchase Offer:*
-Use code *WELCOME10* for 10% off your first order!
-
-Start shopping now:
-https://hotkicks.com
-
-Follow us for updates:
-📱 Instagram: @hotkicks.id
-📱 TikTok: @hotkicks.id
-
-Happy shopping! 👟
-
-Best regards,
-The HotKicks Team`;
-
-    const response = await fetch(FONNTE_URL, {
-      method: "POST",
-      headers: {
-        Authorization: FONNTE_TOKEN,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        target: formattedPhone,
-        message: message,
-        countryCode: "62",
-      }),
-    });
-
-    const data = await response.json();
-
-    if (response.ok && data.status) {
-      return { status: true, message: "Welcome message sent" };
-    }
-
-    return {
-      status: false,
-      error: data.message || "Failed to send welcome message",
-    };
-  } catch (error) {
-    console.error("WhatsApp Welcome Message Error:", error);
-    return {
-      status: false,
-      error: "Failed to send welcome message",
-    };
+  if (!FONNTE_TOKEN) {
+    console.error("FONNTE_TOKEN is not defined in .env");
+    return;
   }
+
+  const message = `Hi ${name}, selamat datang di Hotkicks! Kami senang Anda telah bergabung.`;
+
+  const response = await fetch(FONNTE_URL, {
+    method: "POST",
+    headers: {
+      Authorization: FONNTE_TOKEN,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      target: phone,
+      message,
+    }),
+  });
+
+  const data = await response.json();
+  console.log("Welcome message sent:", data);
+
+  return data;
 }
