@@ -24,7 +24,10 @@ const MainNav = () => {
   const isLoggedIn = user || admin;
 
   return (
-    <div className="container flex items-center justify-between py-4">
+    <div
+      className="container flex items-center justify-between py-4"
+      suppressHydrationWarning={true}
+    >
       <div className="flex-1 lg:hidden">
         <MenuBar />
       </div>
