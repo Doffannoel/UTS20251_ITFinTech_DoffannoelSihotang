@@ -89,6 +89,12 @@ const CheckoutPage = () => {
 
   const total = useMemo(() => subtotal(), [items]);
 
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
   const handleSaveContactInfo = (newContactInfo: typeof contactInfo) => {
     setContactInfo(newContactInfo);
   };
@@ -382,8 +388,8 @@ const CheckoutPage = () => {
             <div className="mt-10 border-t border-neutral-300 pt-6 text-sm">
               <div className="flex justify-between pb-4">
                 <span>Subtotal</span>
-                <span className="font-semibold" suppressHydrationWarning>
-                  Rp {formatNumberID(subtotal())}
+                <span className="font-semibold">
+                  Rp {mounted ? formatNumberID(subtotal()) : "0"}
                 </span>
               </div>
               <div className="flex justify-between py-4">
@@ -392,7 +398,7 @@ const CheckoutPage = () => {
               </div>
               <div className="flex justify-between pt-4 text-base font-semibold">
                 <span>Total</span>
-                <span suppressHydrationWarning>Rp {formatNumberID(total)}</span>
+                <span>Rp {mounted ? formatNumberID(total) : "0"}</span>
               </div>
             </div>
 

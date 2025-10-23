@@ -26,8 +26,15 @@ export const useAuth = (): AuthData => {
   const [user, setUser] = useState<User | null>(null);
   const [admin, setAdmin] = useState<Admin | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  useEffect(() => {
+    if (!mounted) return;
+
     const fetchAuthData = async () => {
       try {
         // Check for user token first
@@ -55,7 +62,7 @@ export const useAuth = (): AuthData => {
     };
 
     fetchAuthData();
-  }, []);
+  }, [mounted]);
 
   return { user, admin, isLoading };
 };
